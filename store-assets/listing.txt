@@ -1,0 +1,13 @@
+Looktwice
+
+See where this page's links and forms actually go.
+
+A link labeled paypal.com that points somewhere else. A login form whose action
+is on another host. javascript: hrefs. The utm_ tail on the URL in your
+address bar.
+
+Click the icon on the tab you care about. It does not run in the background
+and it does not talk to a server.
+
+Category: Productivity
+Language: English

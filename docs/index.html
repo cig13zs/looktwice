@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Looktwice</title>
+  <style>
+    body {
+      margin: 0;
+      background: #f6efe4;
+      color: #2a2118;
+      font: 18px/1.5 Georgia, "Times New Roman", serif;
+    }
+    main { max-width: 36rem; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+    h1 { font-size: 2rem; margin: 0 0 0.6rem; }
+    p { margin: 0 0 1rem; }
+    .sample {
+      background: #efe4d2;
+      border: 1px solid #d7cbb8;
+      padding: 0.8rem 1rem;
+      font: 14px/1.4 ui-monospace, Consolas, monospace;
+      margin: 1.2rem 0;
+    }
+    .warn { color: #9a3412; }
+    a { color: #2a2118; }
+    nav { margin-top: 2rem; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Looktwice</h1>
+    <p>A toolbar button that reads the page you are on and tells you if a link or a form is being cute.</p>
+    <div class="sample">
+      <div class="warn">text host != href</div>
+      paypal.com login<br>
+      paypal.com -&gt; evil.example
+    </div>
+    <p>It also strips utm_ and fbclid off the current URL so you can copy a clean one. Hidden field names show up. Values do not.</p>
+    <p>No account. Nothing uploaded. Chrome only gets <code>activeTab</code> and <code>scripting</code>.</p>
+    <nav>
+      <a href="https://github.com/cig13zs/looktwice">source</a>
+      ·
+      <a href="privacy.md">privacy</a>
+      ·
+      <a href="https://ko-fi.com/jju1s">ko-fi</a>
+    </nav>
+  </main>
+</body>
+</html>
