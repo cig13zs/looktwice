@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Looktwice",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "See where this page's links and forms actually go. Nothing is uploaded.",
+  "homepage_url": "https://github.com/cig13zs/looktwice",
   "action": {
     "default_title": "Looktwice",
     "default_popup": "popup.html",

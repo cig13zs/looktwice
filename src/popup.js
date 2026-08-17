@@ -10,6 +10,7 @@ var copiedEl = document.getElementById('copied');
 var lastClean = '';
 
 function showErr(msg) {
+  statusEl.hidden = false;
   statusEl.textContent = msg;
   statusEl.className = 'err';
 }
@@ -19,10 +20,17 @@ function kindLabel(k) {
   if (k === 'scheme') return 'odd scheme';
   if (k === 'offsite') return 'off-site';
   if (k === 'tracking') return 'tracking params';
+  if (k === 'userinfo') return 'user@host';
+  if (k === 'punycode') return 'lookalike host';
+  if (k === 'invalid') return 'bad href';
   return k;
 }
 
-function addItem(kind, title, detail) {
+function loud(kind) {
+  return kind !== 'ok' && kind !== 'offsite';
+}
+
+function addItem(kind, title, detail, copyHref) {
   var div = document.createElement('div');
   div.className = 'item';
   var k = document.createElement('div');
@@ -38,6 +46,16 @@ function addItem(kind, title, detail) {
     d.textContent = detail;
     div.appendChild(d);
   }
+  if (copyHref) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'small';
+    b.textContent = 'copy clean';
+    b.addEventListener('click', function () {
+      navigator.clipboard.writeText(copyHref);
+    });
+    div.appendChild(b);
+  }
   listEl.appendChild(div);
 }
 
@@ -48,34 +66,46 @@ function render(data) {
   lastClean = data.cleanUrl || data.pageUrl;
   copyBtn.disabled = !lastClean;
 
-  var flags = data.links.filter(function (l) { return l.kind !== 'ok' && l.kind !== 'offsite'; });
+  var flags = data.links.filter(function (l) { return loud(l.kind); });
   var offsite = data.links.filter(function (l) { return l.kind === 'offsite'; });
-  var hotForms = data.forms.filter(function (f) { return f.offsite || f.passwordOffsite; });
+  var hotForms = data.forms.filter(function (f) {
+    return f.offsite || f.passwordOffsite || f.userinfo || f.odd;
+  });
 
   countsEl.textContent =
     data.links.length + ' links, ' +
     flags.length + ' worth a look, ' +
     offsite.length + ' leave this host. ' +
     data.forms.length + ' forms' +
-    (hotForms.length ? ', ' + hotForms.length + ' post elsewhere' : '') +
+    (hotForms.length ? ', ' + hotForms.length + ' odd' : '') +
     (data.removed && data.removed.length ? '. this URL drops ' + data.removed.join(', ') : '.');
 
   hotForms.forEach(function (f) {
-    var title = f.passwordOffsite ? 'password form leaves this host' : 'form leaves this host';
+    var title = 'form';
+    if (f.passwordOffsite) title = 'password form leaves this host';
+    else if (f.odd) title = 'form action is ' + f.scheme;
+    else if (f.userinfo) title = 'form action has user@host';
+    else if (f.offsite) title = 'form leaves this host';
     var extra = f.hidden.length ? ' hidden: ' + f.hidden.join(', ') : '';
-    addItem('mismatch', title, f.actionHost + extra);
+    addItem(f.odd || f.userinfo ? 'scheme' : 'mismatch', title, (f.actionHost || '') + extra);
   });
 
-  flags.slice(0, 20).forEach(function (l) {
+  flags.slice(0, 30).forEach(function (l) {
     var title = l.text || l.href;
     var detail = l.host || l.scheme;
     if (l.mismatch) detail = l.textHost + ' -> ' + l.host;
+    if (l.userinfo) detail = 'userinfo on ' + l.host;
+    if (l.puny || l.mixed) detail = 'host ' + l.host;
     if (l.tracking.length) detail = (detail ? detail + ' · ' : '') + l.tracking.join(', ');
-    addItem(l.kind, title, detail);
+    addItem(l.kind, title, detail, l.clean || l.href);
   });
 
+  if (flags.length > 30) {
+    addItem('ok', (flags.length - 30) + ' more not shown', '');
+  }
+
   if (!flags.length && !hotForms.length) {
-    addItem('ok', 'nothing loud on this page', 'off-site links are listed in the count only');
+    addItem('ok', 'nothing loud on this page', 'off-site links are in the count only');
   }
 }
 
@@ -84,6 +114,8 @@ copyBtn.addEventListener('click', function () {
   navigator.clipboard.writeText(lastClean).then(function () {
     copiedEl.hidden = false;
     setTimeout(function () { copiedEl.hidden = true; }, 1200);
+  }).catch(function () {
+    showErr('Clipboard blocked.');
   });
 });
 
@@ -94,8 +126,8 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     return;
   }
   var url = tab.url || '';
-  if (!/^https?:/i.test(url) && !/^file:/i.test(url)) {
-    showErr('Open a regular web page, then click again.');
+  if (!/^https?:/i.test(url)) {
+    showErr('Open a regular http(s) page, then click again.');
     return;
   }
   chrome.scripting.executeScript(

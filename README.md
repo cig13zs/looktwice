@@ -25,7 +25,9 @@ Or run `node build.js` and load `dist/`.
 ## What it flags
 
 - Link text that contains a hostname different from the href host
-- javascript:, data:, blob: schemes
+- javascript:, data:, blob:, vbscript: schemes
+- user:pass@host phishing
+- punycode / mixed-script hosts
 - Tracking keys on the current URL (utm_*, fbclid, gclid, and a short local list)
 - Forms that post to another host, especially if they have a password field
 - Hidden input *names* (not values)

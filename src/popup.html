@@ -15,9 +15,20 @@
     html, body { margin: 0; background: var(--paper); color: var(--ink); }
     body {
       width: 340px;
+      max-height: 520px;
+      overflow: auto;
       font: 13px/1.4 Georgia, "Times New Roman", serif;
       padding: 12px 12px 14px;
     }
+    button:focus { outline: 2px solid #9a3412; outline-offset: 2px; }
+    button.small {
+      margin-top: 4px;
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--rule);
+      padding: 3px 7px;
+    }
+    #list { max-height: 340px; overflow: auto; }
     h1 { font-size: 15px; font-weight: 700; margin: 0 0 8px; }
     .row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
     button {

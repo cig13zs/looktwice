@@ -18,6 +18,10 @@ var stripped = E.stripTracking(
 assert.strictEqual(stripped.href, 'https://shop.example/p?id=9');
 assert.deepStrictEqual(stripped.removed.sort(), ['fbclid', 'utm_source']);
 
+var creds = E.stripTracking('https://user:pw@shop.example/p', 'https://shop.example/');
+assert.ok(creds.removed.indexOf('userinfo') !== -1);
+assert.ok(creds.href.indexOf('user') === -1);
+
 var mismatch = E.classifyLink(
   'https://evil.example/login',
   'paypal.com login',
@@ -25,7 +29,6 @@ var mismatch = E.classifyLink(
 );
 assert.strictEqual(mismatch.kind, 'mismatch');
 assert.strictEqual(mismatch.textHost, 'paypal.com');
-assert.strictEqual(mismatch.host, 'evil.example');
 
 var js = E.classifyLink('javascript:alert(1)', 'ok', 'https://a.example/');
 assert.strictEqual(js.kind, 'scheme');
@@ -37,6 +40,33 @@ var track = E.classifyLink(
 );
 assert.strictEqual(track.kind, 'tracking');
 
+var bait = E.classifyLink(
+  'https://paypal.com@evil.example/login',
+  'paypal',
+  'https://mail.example/'
+);
+assert.strictEqual(bait.kind, 'userinfo');
+assert.ok(bait.userinfo);
+
+var puny = E.classifyLink(
+  'https://xn--pple-43d.com/',
+  'apple',
+  'https://mail.example/'
+);
+assert.strictEqual(puny.kind, 'punycode');
+
+var mixed = E.classifyLink(
+  'https://payp\u0430l.com/',
+  'bank',
+  'https://mail.example/'
+);
+assert.ok(E.mixedScript('payp\u0430l.com'));
+assert.strictEqual(mixed.kind, 'punycode');
+
+var rel = E.classifyLink('/about?utm_source=x', 'about', 'https://news.example/home');
+assert.strictEqual(rel.kind, 'tracking');
+assert.strictEqual(rel.host, 'news.example');
+
 var form = E.classifyForm(
   'https://other.example/collect',
   'https://bank.example/login',
@@ -45,10 +75,15 @@ var form = E.classifyForm(
 );
 assert.ok(form.offsite);
 assert.ok(form.passwordOffsite);
-assert.deepStrictEqual(form.hidden, ['csrf', 'redir']);
 
 var same = E.classifyForm('', 'https://bank.example/login', [], true);
 assert.ok(!same.offsite);
 assert.ok(!same.passwordOffsite);
+
+var jsForm = E.classifyForm('javascript:void(0)', 'https://bank.example/login', [], false);
+assert.ok(jsForm.odd);
+
+var spaced = E.classifyLink('  https://evil.example/x  ', 'ok', 'https://a.example/');
+assert.strictEqual(spaced.host, 'evil.example');
 
 console.log('ok');

@@ -1,6 +1,5 @@
 /*
  * Pure URL/form checks. No DOM, no network.
- * Used by the popup inject and by engine.test.js.
  */
 (function (root) {
   'use strict';
@@ -16,6 +15,8 @@
     oly_anon_id: 1, oly_enc_id: 1, nr_email_referer: 1
   };
 
+  var ODD_SCHEMES = { javascript: 1, data: 1, blob: 1, vbscript: 1 };
+
   function bareHost(host) {
     if (!host) return '';
     host = String(host).toLowerCase();
@@ -25,7 +26,7 @@
 
   function parseUrl(href, base) {
     try {
-      return new URL(href, base || undefined);
+      return new URL(String(href).trim(), base || undefined);
     } catch (e) {
       return null;
     }
@@ -41,29 +42,49 @@
     if (!key) return false;
     key = String(key).toLowerCase();
     if (TRACKING_KEYS[key]) return true;
-    if (key.indexOf('utm_') === 0) return true;
-    return false;
+    return key.indexOf('utm_') === 0;
+  }
+
+  function mixedScript(host) {
+    if (!host) return false;
+    var latin = /[A-Za-z]/.test(host);
+    var other = /[\u0370-\u03FF\u0400-\u04FF]/.test(host);
+    return latin && other;
+  }
+
+  function hasUserinfo(u) {
+    return !!(u && (u.username || u.password));
+  }
+
+  function trackingKeys(u) {
+    var out = [];
+    if (!u) return out;
+    u.searchParams.forEach(function (_v, k) {
+      if (isTrackingKey(k)) out.push(k);
+    });
+    return out;
   }
 
   function stripTracking(href, base) {
     var u = parseUrl(href, base);
     if (!u) return { href: href, removed: [], ok: false };
-    var removed = [];
-    var keys = [];
-    u.searchParams.forEach(function (_v, k) { keys.push(k); });
-    keys.forEach(function (k) {
-      if (isTrackingKey(k)) {
-        removed.push(k);
-        u.searchParams.delete(k);
-      }
-    });
+    var removed = trackingKeys(u);
+    removed.forEach(function (k) { u.searchParams.delete(k); });
+    if (u.username || u.password) {
+      u.username = '';
+      u.password = '';
+      removed.push('userinfo');
+    }
     return { href: u.toString(), removed: removed, ok: true };
   }
 
   function classifyLink(href, text, pageUrl) {
     var u = parseUrl(href, pageUrl);
     if (!u) {
-      return { kind: 'invalid', href: href, host: '', scheme: '', mismatch: false, tracking: [] };
+      return {
+        kind: 'invalid', href: href, host: '', scheme: '',
+        mismatch: false, tracking: [], puny: false, mixed: false, userinfo: false
+      };
     }
     var scheme = u.protocol.replace(':', '');
     var host = bareHost(u.hostname);
@@ -71,12 +92,14 @@
     var pageHost = page ? bareHost(page.hostname) : '';
     var textHost = hostish(text);
     var mismatch = !!(textHost && host && textHost !== host);
-    var tracking = [];
-    u.searchParams.forEach(function (_v, k) {
-      if (isTrackingKey(k)) tracking.push(k);
-    });
+    var tracking = trackingKeys(u);
+    var puny = host.indexOf('xn--') !== -1;
+    var mixed = mixedScript(u.hostname);
+    var userinfo = hasUserinfo(u);
     var kind = 'ok';
-    if (scheme === 'javascript' || scheme === 'data' || scheme === 'blob') kind = 'scheme';
+    if (ODD_SCHEMES[scheme]) kind = 'scheme';
+    else if (userinfo) kind = 'userinfo';
+    else if (puny || mixed) kind = 'punycode';
     else if (mismatch) kind = 'mismatch';
     else if (host && pageHost && host !== pageHost) kind = 'offsite';
     else if (tracking.length) kind = 'tracking';
@@ -87,7 +110,10 @@
       scheme: scheme,
       mismatch: mismatch,
       textHost: textHost || '',
-      tracking: tracking
+      tracking: tracking,
+      puny: puny,
+      mixed: mixed,
+      userinfo: userinfo
     };
   }
 
@@ -96,13 +122,19 @@
     var pageHost = page ? bareHost(page.hostname) : '';
     var resolved = action ? parseUrl(action, pageUrl) : page;
     var actionHost = resolved ? bareHost(resolved.hostname) : pageHost;
+    var scheme = resolved ? resolved.protocol.replace(':', '') : 'https';
     var offsite = !!(actionHost && pageHost && actionHost !== pageHost);
+    var userinfo = hasUserinfo(resolved);
+    var odd = !!ODD_SCHEMES[scheme];
     return {
       action: resolved ? resolved.href : (action || pageUrl),
       actionHost: actionHost,
       offsite: offsite,
       hidden: hiddenNames || [],
-      passwordOffsite: !!(hasPassword && offsite)
+      passwordOffsite: !!(hasPassword && offsite),
+      userinfo: userinfo,
+      scheme: scheme,
+      odd: odd
     };
   }
 
@@ -111,6 +143,7 @@
     bareHost: bareHost,
     hostish: hostish,
     isTrackingKey: isTrackingKey,
+    mixedScript: mixedScript,
     stripTracking: stripTracking,
     classifyLink: classifyLink,
     classifyForm: classifyForm
