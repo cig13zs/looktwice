@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Looktwice",
+  "version": "1.0.0",
+  "description": "See where this page's links and forms actually go. Nothing is uploaded.",
+  "action": {
+    "default_title": "Looktwice",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/16.png",
+      "32": "icons/32.png",
+      "48": "icons/48.png"
+    }
+  },
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "permissions": ["activeTab", "scripting"]
+}

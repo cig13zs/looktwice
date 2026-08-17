@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Looktwice</title>
+  <style>
+    :root {
+      --ink: #2a2118;
+      --paper: #f6efe4;
+      --rule: #d7cbb8;
+      --warn: #9a3412;
+      --ok: #3f6212;
+      --mute: #6b5e4e;
+    }
+    html, body { margin: 0; background: var(--paper); color: var(--ink); }
+    body {
+      width: 340px;
+      font: 13px/1.4 Georgia, "Times New Roman", serif;
+      padding: 12px 12px 14px;
+    }
+    h1 { font-size: 15px; font-weight: 700; margin: 0 0 8px; }
+    .row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+    button {
+      font: 12px/1.2 Georgia, serif;
+      background: var(--ink);
+      color: var(--paper);
+      border: 0;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.45; cursor: default; }
+    .url { font: 11px/1.35 ui-monospace, Consolas, monospace; word-break: break-all; color: var(--mute); }
+    .counts { margin: 8px 0; color: var(--mute); }
+    .item { border-top: 1px solid var(--rule); padding: 6px 0; }
+    .kind { font-size: 11px; letter-spacing: 0.03em; text-transform: uppercase; color: var(--warn); }
+    .kind.ok { color: var(--ok); }
+    .err { color: var(--warn); }
+    a { color: var(--ink); }
+  </style>
+</head>
+<body>
+  <h1>Looktwice</h1>
+  <div id="status">Checking this tab...</div>
+  <div id="main" hidden>
+    <div class="url" id="page"></div>
+    <div class="row">
+      <button type="button" id="copy">Copy clean URL</button>
+      <span id="copied" hidden>copied</span>
+    </div>
+    <div class="counts" id="counts"></div>
+    <div id="list"></div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

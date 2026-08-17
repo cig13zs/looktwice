@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.zip
+.claude/
+CLAUDE.md
+AGENTS.md
+.DS_Store
+Thumbs.db
